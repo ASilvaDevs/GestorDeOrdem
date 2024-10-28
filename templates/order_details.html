@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Detalhes da Ordem de Serviço</h2>
+    <p><strong>ID:</strong> {{ order['id'] }}</p>
+    <p><strong>Título:</strong> {{ order['title'] }}</p>
+    <p><strong>Descrição:</strong> {{ order['description'] }}</p>
+
+    <h3>Atividades</h3>
+    <a href="{{ url_for('start_activity', order_id=order['id']) }}" class="btn btn-success mb-3">Iniciar Atividade</a>
+    <a href="{{ url_for('end_activity', order_id=order['id']) }}" class="btn btn-danger mb-3">Finalizar Atividade</a>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Início</th>
+                <th>Término</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            <tr>
+                <td>{{ activity['start_time'] }}</td>
+                <td>{{ activity['end_time'] or '-' }}</td>
+                <td>
+                    <a href="{{ url_for('edit_activity', activity_id=activity['id']) }}" class="btn btn-warning btn-sm">Editar</a>
+                    <a href="{{ url_for('delete_activity', activity_id=activity['id']) }}" class="btn btn-danger btn-sm">Apagar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
+{% endblock %}

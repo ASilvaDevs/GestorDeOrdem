@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Criar Nova Ordem de Serviço</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="order_id">ID da Ordem de Serviço</label>
+            <input type="text" class="form-control" id="order_id" name="order_id" required minlength="8" maxlength="8">
+        </div>
+        <div class="form-group">
+            <label for="title">Título</label>
+            <input type="text" class="form-control" id="title" name="title" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Descrição</label>
+            <textarea class="form-control" id="description" name="description" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Criar</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
+    </form>
+{% endblock %}

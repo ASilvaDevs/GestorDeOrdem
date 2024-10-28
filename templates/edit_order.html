@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Editar Ordem de Serviço</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="title">Título</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{ order['title'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Descrição</label>
+            <textarea class="form-control" id="description" name="description" required>{{ order['description'] }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Atualizar</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
+    </form>
+{% endblock %}

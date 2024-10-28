@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <a href="{{ url_for('create_order') }}" class="btn btn-primary mb-3">Nova Ordem de Serviço</a>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order['id'] }}</td>
+                <td>{{ order['title'] }}</td>
+                <td>{{ order['description'] }}</td>
+                <td>
+                    <a href="{{ url_for('order_details', id=order['id']) }}" class="btn btn-info btn-sm">Ver Detalhes</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

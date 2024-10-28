@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Editar Atividade</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="start_time">Início</label>
+            <input type="text" class="form-control" id="start_time" name="start_time" value="{{ activity['start_time'] }}" required>
+        </div>
+        <div class="form-group">
+            <label for="end_time">Término</label>
+            <input type="text" class="form-control" id="end_time" name="end_time" value="{{ activity['end_time'] }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('order_details', id=activity['order_id']) }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}
