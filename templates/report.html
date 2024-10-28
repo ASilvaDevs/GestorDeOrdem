@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Ordens de Serviço</title>
+</head>
+<body>
+    <h1>Relatório de Atividades no Período</h1>
+    <table border="1" cellspacing="0" cellpadding="5">
+        <thead>
+            <tr>
+                <th>Ordem ID</th>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Início</th>
+                <th>Término</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in activities %}
+            <tr>
+                <td>{{ activity['id'] }}</td>
+                <td>{{ activity['title'] }}</td>
+                <td>{{ activity['description'] }}</td>
+                <td>{{ activity['start_time'] }}</td>
+                <td>{{ activity['end_time'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

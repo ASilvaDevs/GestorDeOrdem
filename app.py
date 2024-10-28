@@ -1,21 +1,27 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_file
 import sqlite3
 from datetime import datetime
+import pdfkit  # Biblioteca para gerar PDF (instale com `pip install pdfkit`)
+import pdfkit
+
+path_to_wkhtmltopdf = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"  # Caminho do wkhtmltopdf no Windows
+
+
 
 app = Flask(__name__)
 
-# Função de conexão com o banco de dados
+# Função para conectar ao banco de dados
 def get_db_connection():
     conn = sqlite3.connect('service_orders.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Inicializa o banco de dados
+# Inicializar o banco de dados
 def init_db():
     conn = get_db_connection()
     conn.execute('''
         CREATE TABLE IF NOT EXISTS orders (
-            id TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             description TEXT NOT NULL
         )
@@ -23,45 +29,55 @@ def init_db():
     conn.execute('''
         CREATE TABLE IF NOT EXISTS activities (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_id TEXT,
+            order_id INTEGER,
             start_time TEXT,
             end_time TEXT,
-            FOREIGN KEY(order_id) REFERENCES orders(id)
+            FOREIGN KEY (order_id) REFERENCES orders (id)
         )
     ''')
     conn.commit()
     conn.close()
 
-init_db()
-
-# Rota para a página inicial
-@app.route('/')
+# Rota principal para listar ordens
+@app.route('/', methods=['GET', 'POST'])
 def index():
     conn = get_db_connection()
     orders = conn.execute('SELECT * FROM orders').fetchall()
+    
+    # Filtro de datas
+    filtered_activities = []
+    if request.method == 'POST':
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
+        
+        filtered_activities = conn.execute('''
+            SELECT orders.id, orders.title, orders.description, activities.start_time, activities.end_time
+            FROM orders
+            JOIN activities ON orders.id = activities.order_id
+            WHERE DATE(activities.start_time) BETWEEN ? AND ?
+            ''', (start_date, end_date)).fetchall()
+        
     conn.close()
-    return render_template('index.html', orders=orders)
+    return render_template('index.html', orders=orders, filtered_activities=filtered_activities)
 
-# Rota para criar uma nova ordem de serviço
+# Rota para criar nova ordem de serviço
 @app.route('/create_order', methods=['GET', 'POST'])
 def create_order():
     if request.method == 'POST':
-        order_id = request.form['order_id']
         title = request.form['title']
         description = request.form['description']
-
+        
         conn = get_db_connection()
-        conn.execute('INSERT INTO orders (id, title, description) VALUES (?, ?, ?)',
-                     (order_id, title, description))
+        conn.execute('INSERT INTO orders (title, description) VALUES (?, ?)', (title, description))
         conn.commit()
         conn.close()
-
+        
         return redirect(url_for('index'))
-
+    
     return render_template('create_order.html')
 
-# Rota para exibir detalhes da ordem de serviço
-@app.route('/order/<id>')
+# Rota para visualizar detalhes da ordem de serviço
+@app.route('/order/<int:id>')
 def order_details(id):
     conn = get_db_connection()
     order = conn.execute('SELECT * FROM orders WHERE id = ?', (id,)).fetchone()
@@ -69,60 +85,56 @@ def order_details(id):
     conn.close()
     return render_template('order_details.html', order=order, activities=activities)
 
-# Rota para iniciar uma atividade
-@app.route('/start_activity/<order_id>')
-def start_activity(order_id):
+# Rota para iniciar atividade
+@app.route('/order/<int:id>/start', methods=['POST'])
+def start_activity(id):
+    start_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
     conn = get_db_connection()
-    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    conn.execute('INSERT INTO activities (order_id, start_time) VALUES (?, ?)', (order_id, start_time))
+    conn.execute('INSERT INTO activities (order_id, start_time) VALUES (?, ?)', (id, start_time))
     conn.commit()
     conn.close()
-    return redirect(url_for('order_details', id=order_id))
+    
+    return redirect(url_for('order_details', id=id))
 
-# Rota para finalizar a última atividade
-@app.route('/end_activity/<order_id>')
-def end_activity(order_id):
+# Rota para finalizar atividade
+@app.route('/order/<int:id>/end/<int:activity_id>', methods=['POST'])
+def end_activity(id, activity_id):
+    end_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
     conn = get_db_connection()
-    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    conn.execute('''
-        UPDATE activities
-        SET end_time = ?
-        WHERE order_id = ? AND end_time IS NULL
-    ''', (end_time, order_id))
+    conn.execute('UPDATE activities SET end_time = ? WHERE id = ?', (end_time, activity_id))
     conn.commit()
     conn.close()
-    return redirect(url_for('order_details', id=order_id))
+    
+    return redirect(url_for('order_details', id=id))
 
-# Rota para editar uma atividade específica
-@app.route('/edit_activity/<int:activity_id>', methods=['GET', 'POST'])
-def edit_activity(activity_id):
+# Rota para gerar PDF do filtro de datas
+@app.route('/generate_pdf', methods=['POST'])
+def generate_pdf():
+    start_date = request.form['start_date']
+    end_date = request.form['end_date']
+    
     conn = get_db_connection()
-    activity = conn.execute('SELECT * FROM activities WHERE id = ?', (activity_id,)).fetchone()
-
-    if request.method == 'POST':
-        start_time = request.form['start_time']
-        end_time = request.form['end_time']
-        conn.execute('''
-            UPDATE activities
-            SET start_time = ?, end_time = ?
-            WHERE id = ?
-        ''', (start_time, end_time, activity_id))
-        conn.commit()
-        conn.close()
-        return redirect(url_for('order_details', id=activity['order_id']))
-
+    activities = conn.execute('''
+        SELECT orders.id, orders.title, orders.description, activities.start_time, activities.end_time
+        FROM orders
+        JOIN activities ON orders.id = activities.order_id
+        WHERE DATE(activities.start_time) BETWEEN ? AND ?
+    ''', (start_date, end_date)).fetchall()
     conn.close()
-    return render_template('edit_activity.html', activity=activity)
 
-# Rota para deletar uma atividade
-@app.route('/delete_activity/<int:activity_id>')
-def delete_activity(activity_id):
-    conn = get_db_connection()
-    activity = conn.execute('SELECT * FROM activities WHERE id = ?', (activity_id,)).fetchone()
-    conn.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('order_details', id=activity['order_id']))
+    rendered = render_template('report.html', activities=activities)
+    pdf = pdfkit.from_string(rendered, False, configuration=pdfkit.configuration(wkhtmltopdf=path_to_wkhtmltopdf))
+    # Em generate_pdf:
+
+
+    
+    response = send_file(pdf, as_attachment=True, download_name='Relatorio_Ordens_Servico.pdf', mimetype='application/pdf')
+    return response
+
+# Inicializar o banco de dados ao iniciar a aplicação
+init_db()
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -24,4 +24,48 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <h2>Filtrar Ordens de Serviço por Data</h2>
+    <form method="POST" action="{{ url_for('index') }}">
+        <div class="form-group">
+            <label for="start_date">Data Início:</label>
+            <input type="date" id="start_date" name="start_date" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="end_date">Data Fim:</label>
+            <input type="date" id="end_date" name="end_date" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
+    </form>
+
+    {% if filtered_activities %}
+    <h3 class="mt-4">Atividades no Período Selecionado</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ordem ID</th>
+                <th>Título</th>
+                <th>Descrição</th>
+                <th>Início</th>
+                <th>Término</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for activity in filtered_activities %}
+            <tr>
+                <td>{{ activity['id'] }}</td>
+                <td>{{ activity['title'] }}</td>
+                <td>{{ activity['description'] }}</td>
+                <td>{{ activity['start_time'] }}</td>
+                <td>{{ activity['end_time'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form method="POST" action="{{ url_for('generate_pdf') }}">
+        <input type="hidden" name="start_date" value="{{ request.form['start_date'] }}">
+        <input type="hidden" name="end_date" value="{{ request.form['end_date'] }}">
+        <button type="submit" class="btn btn-secondary mt-3">Gerar PDF</button>
+    </form>
+    {% endif %}
 {% endblock %}
