@@ -3,13 +3,13 @@ FROM python:latest
 # Define o diretório de trabalho
 WORKDIR /ORDEMDESERVICO
 
-# Copia o arquivo de dependências para o contêiner
+# Copia o arquivo requirements.txt para o contêiner
 COPY requirements.txt .
 
 # Atualiza o pip e instala as dependências
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copia o restante dos arquivos para o contêiner
+# Copia todos os outros arquivos do diretório atual para o contêiner
 COPY . .
 
 # Expõe a porta 8000 para o servidor FastAPI
